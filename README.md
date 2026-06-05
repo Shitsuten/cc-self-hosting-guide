@@ -26,6 +26,14 @@ Hub（常驻进程，负责转发 + nudge + 终端视图）
     └─ ← MCP reply 工具 ← CC（出站）
 ```
 
+## CC 冷知识（热知识）
+
+- **Session 本地保存**：所有对话都存在本地 JSONL 文件里。即使 context 被压缩，原文不会消失
+- **Session 文件保留 30 天**：默认只保留 30 天，可以在设置里改 `~/.claude/settings.json` → `"sessionTTLDays"`
+- **`/resume`**：回到任意历史 session 继续对话，会列出最近的 session 让你选
+- **`/continue`**：直接接上最后一个 session，不用选
+- **不要用 root 跑 CC**：`--dangerously-skip-permissions` 在 root 下会拒绝执行。建议新建一个普通用户跑 CC
+
 ## 文档
 
 | 文件 | 内容 |
@@ -132,14 +140,6 @@ server {
 apt install certbot python3-certbot-nginx
 certbot --nginx -d your-domain.com
 ```
-
-## CC 冷知识（热知识）
-
-- **Session 本地保存**：所有对话都存在本地 JSONL 文件里。即使 context 被压缩，原文不会消失
-- **Session 文件保留 30 天**：默认只保留 30 天，可以在设置里改 `~/.claude/settings.json` → `"sessionTTLDays"`
-- **`/resume`**：回到任意历史 session 继续对话，会列出最近的 session 让你选
-- **`/continue`**：直接接上最后一个 session，不用选
-- **不要用 root 跑 CC**：`--dangerously-skip-permissions` 在 root 下会拒绝执行。建议新建一个普通用户跑 CC
 
 ## 可选升级
 
