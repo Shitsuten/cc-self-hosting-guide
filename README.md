@@ -125,4 +125,9 @@ apt install certbot python3-certbot-nginx
 certbot --nginx -d your-domain.com
 ```
 
+## 可选升级
+
+- **终端视图**：参考代码用 `tmux capture-pane` 轮询文本，延迟高且没有颜色。可以换成 xterm.js + node-pty 或 SwiftTerm 做真实终端流，通过 WebSocket 双向传输 PTY 数据
+- **前端框架**：参考代码是单文件 vanilla HTML。复杂场景可以拆成 React/Vue 项目
+
 详细原理和踩坑见 [GUIDE.md](GUIDE.md)，出问题看 [HANDBOOK.md](HANDBOOK.md)。
