@@ -45,17 +45,61 @@ Hub（常驻进程，负责转发 + nudge + 终端视图）
 - Claude Code CLI（`npm install -g @anthropic-ai/claude-code`）
 - 可选：一台 VPS（想让 CC 24 小时在线的话。建议 ≥ 2GB 内存，1GB 非常勉强。本地电脑跑也完全可以）
 
-## 快速开始
+## 快速开始（本地）
+
+在自己电脑上跑，不需要域名、不需要 VPS、不需要 HTTPS。
 
 ```bash
 # 1. 启动 hub
 tmux new-session -d -s hub 'cd channel && bun run hub.ts'
 
-# 2. 启动 CC（新 session 或 continue）
+# 2. 启动 CC
 tmux new-session -d -s cc
 tmux send-keys -t cc 'bash start_cc.sh' Enter
 
-# 3. 打开前端，连 hub 的 WebSocket，开始对话
+# 3. 打开前端
+# 浏览器访问 http://localhost:<hub端口>，开始对话
+```
+
+## 进阶：远程访问（VPS + 域名）
+
+想从手机或其他设备访问 CC，需要：
+
+1. **一台 VPS**（建议 ≥ 2GB 内存）— 让 CC 24 小时在线
+2. **域名**（可选但推荐）— 不想每次输 IP 的话
+3. **HTTPS** — 浏览器对非 localhost 的 WebSocket 连接要求 `wss://`，必须配证书
+4. **nginx 反代** — 把 hub 的 WebSocket 端口代理到 443
+
+```nginx
+# nginx 配置示例
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location /ws {
+        proxy_pass http://127.0.0.1:<hub端口>;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 86400;
+    }
+
+    location / {
+        root /path/to/frontend;
+        index index.html;
+    }
+}
+```
+
+`proxy_read_timeout 86400` 很重要——默认 60 秒会断 WebSocket。
+
+证书推荐用 Let's Encrypt（免费）：
+```bash
+apt install certbot python3-certbot-nginx
+certbot --nginx -d your-domain.com
 ```
 
 详细原理和踩坑见 [GUIDE.md](GUIDE.md)，出问题看 [HANDBOOK.md](HANDBOOK.md)。
