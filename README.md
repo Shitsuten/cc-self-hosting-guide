@@ -40,10 +40,10 @@ Hub（常驻进程，负责转发 + nudge + 终端视图）
 
 ## 前置要求
 
-- 一台 VPS（建议 ≥ 2GB 内存，1GB 非常勉强）
 - tmux
 - Node.js / Bun
 - Claude Code CLI（`npm install -g @anthropic-ai/claude-code`）
+- 可选：一台 VPS（想让 CC 24 小时在线的话。建议 ≥ 2GB 内存，1GB 非常勉强。本地电脑跑也完全可以）
 
 ## 快速开始
 
