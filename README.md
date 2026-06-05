@@ -133,6 +133,13 @@ apt install certbot python3-certbot-nginx
 certbot --nginx -d your-domain.com
 ```
 
+## CC 冷知识（热知识）
+
+- **Session 本地保存**：所有对话都存在本地 JSONL 文件里。即使 context 被压缩，原文不会消失
+- **Session 文件保留 30 天**：默认只保留 30 天，可以在设置里改 `~/.claude/settings.json` → `"sessionTTLDays"`
+- **`/resume`**：回到任意历史 session 继续对话，会列出最近的 session 让你选
+- **`/continue`**：直接接上最后一个 session，不用选
+
 ## 可选升级
 
 - **终端视图**：参考代码用 `tmux capture-pane` 轮询文本，延迟高且没有颜色。可以换成 xterm.js + node-pty 或 SwiftTerm 做真实终端流，通过 WebSocket 双向传输 PTY 数据
