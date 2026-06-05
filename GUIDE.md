@@ -227,11 +227,11 @@ function forwardToCC(text: string, chatId: string, messageId: string, user: stri
 3. 出站走的是普通 MCP tool call，一直是稳定的
 4. **整个方案不依赖 channel 协议**——不需要 `--channels`、不需要 `--dangerously-load-development-channels`、不需要 MCP notification。只要 CC 还认 `<channel>` tag 格式（官方 Discord 和 Telegram 插件都依赖这个），这个方案就不会 break
 
-### 离线消息投递：Whisper 自动兜底
+### 离线消息投递：Web Push 自动兜底
 
-如果 CC 调 MCP reply 工具时前端没有客户端在线（WebSocket 无连接），消息不会丢——channel server 会自动 fallback 到 whisper 推送：存消息 + 推手机通知。用户下次打开前端就能看到。
+如果 CC 调 MCP reply 工具时前端没有客户端在线（WebSocket 无连接），消息不会丢——hub 会自动 fallback 到 Web Push 推送通知到用户手机。用户点通知即可打开前端看到消息。
 
-**注意：不要手动调 whisper push API 发消息。** channel reply 失败时已经自动兜底了，手动再发一次 = 用户收到两条一样的。只有在完全绕过 channel 的极少数场景下才需要手动 whisper。
+详见 [七点五、PWA + Web Push 推送](#七点五pwa--web-push-推送)。
 
 ### 局限
 
@@ -296,7 +296,7 @@ CC 跑在 VPS 上 24 小时在线，但没人找它的时候它就干等着。nu
 
 1. 读 CC 的 transcript JSONL，找最后一条真实用户消息（跳过 `tool_result`）
 2. 检查这条消息是不是 nudge（内容包含 `[nudge]`）
-3. 如果是 nudge，检查 CC 在这之后有没有调用过 satyricon 的 reply 工具
+3. 如果是 nudge，检查 CC 在这之后有没有调用过 channel 的 reply 工具
 4. 如果没有 → block，返回提示强制 CC 发消息
 
 这个 hook 确保 CC 不能"收到 nudge 但不发消息"。效果：CC 被 nudge 后必定会通过前端发一条消息给用户。
