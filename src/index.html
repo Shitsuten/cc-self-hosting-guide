@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<link rel="manifest" href="/manifest.json">
+<title>CC Channel</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --text: #e0e0e0;
+  --text-dim: #888;
+  --accent: #0f3460;
+  --accent-bright: #53a8b6;
+  --user-bg: #0f3460;
+  --assistant-bg: #16213e;
+  --border: rgba(255,255,255,0.08);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { height: 100%; height: 100dvh; overflow: hidden; }
+body {
+  height: 100%; height: 100dvh;
+  overflow: hidden; position: fixed; width: 100%; inset: 0;
+  background: var(--bg); color: var(--text);
+  display: flex; flex-direction: column;
+}
+.header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header h1 { font-size: 16px; font-weight: 600; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #555; transition: background .3s;
+}
+.status-dot.online { background: #4caf50; }
+.status-dot.busy { background: #ff9800; animation: pulse 1.5s infinite; }
+@keyframes pulse { 50% { opacity: .5; } }
+.messages {
+  flex: 1; overflow-y: auto; padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.msg { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+.msg.user { align-self: flex-end; background: var(--user-bg); border-bottom-right-radius: 4px; }
+.msg.assistant { align-self: flex-start; background: var(--assistant-bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg .ts { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.msg img { max-width: 100%; border-radius: 8px; margin-top: 6px; }
+.input-bar {
+  display: flex; align-items: flex-end; gap: 8px;
+  padding: 8px 12px;
+  padding-bottom: max(8px, var(--safe-bottom));
+  background: var(--surface); border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.input-field {
+  flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  border-radius: 20px; padding: 8px 14px; font-size: 15px;
+  color: var(--text); resize: none; max-height: 120px; line-height: 1.4; outline: none;
+}
+.input-field::placeholder { color: var(--text-dim); }
+.send-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: var(--accent-bright); color: #fff; font-size: 18px;
+  cursor: pointer; flex-shrink: 0;
+}
+.send-btn:disabled { opacity: 0.3; cursor: default; }
+.term-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-dim); font-size: 12px; padding: 4px 8px; cursor: pointer;
+  margin-left: auto;
+}
+.term-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,0.95); display: none; flex-direction: column;
+}
+.term-overlay.visible { display: flex; }
+.term-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.term-header span { color: #8fc4a0; font-family: monospace; font-size: 13px; }
+.term-close { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; }
+.term-body {
+  flex: 1; overflow-y: auto; padding: 12px 16px;
+  font-family: monospace; font-size: 12px; line-height: 1.5;
+  color: #d4d4d4; white-space: pre-wrap; word-break: break-all;
+}
+.term-input-bar {
+  display: flex; gap: 8px; padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.1);
+}
+.term-input {
+  flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px; padding: 6px 10px; font-family: monospace; font-size: 13px;
+  color: #d4d4d4; outline: none;
+}
+.term-send { background: #334; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #8fc4a0; padding: 6px 12px; cursor: pointer; font-family: monospace; font-size: 13px; }
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+}
+.auth-overlay.hidden { display: none; }
+.auth-box { text-align: center; }
+.auth-box input {
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px; font-size: 20px; text-align: center;
+  color: var(--text); width: 160px; letter-spacing: 8px; outline: none;
+}
+.auth-box p { color: var(--text-dim); font-size: 13px; margin-top: 8px; }
+.auth-error { color: #f44; font-size: 13px; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <input type="password" id="pinInput" maxlength="8" placeholder="PIN" autofocus>
+    <p>Enter PIN to connect</p>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<div class="header">
+  <div class="status-dot" id="statusDot"></div>
+  <h1>CC Channel</h1>
+  <button class="term-toggle" onclick="toggleTerminal()">terminal</button>
+</div>
+
+<div class="messages" id="messages"></div>
+
+<div class="term-overlay" id="termOverlay">
+  <div class="term-header">
+    <span>terminal</span>
+    <button class="term-close" onclick="toggleTerminal()">&times;</button>
+  </div>
+  <div class="term-body" id="termBody"></div>
+  <div class="term-input-bar">
+    <input class="term-input" id="termInput" placeholder="$ command" onkeydown="if(event.key==='Enter')sendTermCmd()">
+    <button class="term-send" onclick="sendTermCmd()">run</button>
+    <button class="term-send" style="color:#f44" onclick="sendCtrlC()">^C</button>
+  </div>
+</div>
+
+<div class="input-bar">
+  <textarea class="input-field" id="input" rows="1" placeholder="Message..." oninput="autoResize(this); $sendBtn.disabled=!this.value.trim()" onkeydown="handleKey(event)"></textarea>
+  <button class="send-btn" id="sendBtn" onclick="send()" disabled>↑</button>
+</div>
+
+<script>
+// --- PWA + Push ---
+var swReg = null, pushReady = false, pushPending = false
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+    swReg = reg
+    if (!('PushManager' in window)) return
+    reg.pushManager.getSubscription().then(function(sub) {
+      if (sub) { pushReady = true; sendSubToServer(sub) }
+      else if (pushPending) trySubscribePush()
+    })
+  }).catch(function(e) { console.log('[push] SW error:', e) })
+}
+function trySubscribePush() {
+  if (pushReady || Notification.permission === 'denied') return
+  if (!swReg) { pushPending = true; return }
+  if (Notification.permission === 'granted') { subscribePush(); return }
+  Notification.requestPermission().then(function(perm) {
+    if (perm === 'granted') subscribePush()
+  })
+}
+function subscribePush() {
+  if (!swReg || pushReady) return
+  fetch('/api/vapid-public-key').then(function(r){ return r.json() }).then(function(d) {
+    if (!d.publicKey) return
+    return swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(d.publicKey)
+    }).then(function(sub) { pushReady = true; sendSubToServer(sub) })
+  })
+}
+function urlBase64ToUint8Array(b) {
+  var p = '='.repeat((4 - b.length % 4) % 4)
+  var raw = atob((b + p).replace(/-/g, '+').replace(/_/g, '/'))
+  var a = new Uint8Array(raw.length)
+  for (var i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i)
+  return a
+}
+function sendSubToServer(sub) {
+  fetch('/api/push/subscribe', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(sub.toJSON())
+  })
+}
+
+// --- WebSocket ---
+const WS_URL = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/`
+let ws = null, clientId = null, ccAlive = false, ccBusy = false
+let reconnectTimer = null, reconnectAttempts = 0
+const knownIds = new Set()
+const $messages = document.getElementById('messages')
+const $input = document.getElementById('input')
+const $sendBtn = document.getElementById('sendBtn')
+const $dot = document.getElementById('statusDot')
+const $auth = document.getElementById('authOverlay')
+const $pin = document.getElementById('pinInput')
+const $authErr = document.getElementById('authError')
+
+function connect() {
+  ws = new WebSocket(WS_URL)
+  ws.onopen = () => { reconnectAttempts = 0 }
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data)
+    switch (msg.type) {
+      case 'auth_required': $auth.classList.remove('hidden'); break
+      case 'auth_ok':
+        clientId = msg.client_id; ccAlive = msg.cc_alive
+        $auth.classList.add('hidden'); updateDot(); break
+      case 'auth_fail': $authErr.textContent = 'Wrong PIN'; break
+      case 'cc_status': ccAlive = msg.alive; updateDot(); break
+      case 'cc_busy': ccBusy = msg.busy; updateDot(); break
+      case 'history':
+        $messages.innerHTML = ''
+        for (const m of msg.messages) addMessage(m.role, m.content, m.id, m.ts, false, m.image)
+        scrollBottom(); break
+      case 'message':
+        if (!knownIds.has(msg.id)) addMessage(msg.role, msg.content, msg.id, msg.ts, true, msg.image)
+        break
+      case 'edit':
+        const el = document.querySelector(`[data-id="${msg.id}"] .content`)
+        if (el) el.textContent = msg.content; break
+      case 'terminal': document.getElementById('termBody').textContent = msg.content; break
+    }
+  }
+  ws.onclose = () => {
+    reconnectAttempts++
+    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000)
+    reconnectTimer = setTimeout(connect, delay)
+  }
+  ws.onerror = () => {}
+}
+
+function updateDot() {
+  $dot.className = 'status-dot' + (ccBusy ? ' busy' : ccAlive ? ' online' : '')
+}
+
+function addMessage(role, content, id, ts, scroll, image) {
+  if (id) knownIds.add(id)
+  const div = document.createElement('div')
+  div.className = `msg ${role}`
+  if (id) div.dataset.id = id
+  const c = document.createElement('div')
+  c.className = 'content'
+  c.textContent = content || ''
+  div.appendChild(c)
+  if (image) {
+    const img = document.createElement('img')
+    img.src = image; img.loading = 'lazy'
+    div.appendChild(img)
+  }
+  if (ts) {
+    const t = document.createElement('div')
+    t.className = 'ts'
+    t.textContent = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    div.appendChild(t)
+  }
+  $messages.appendChild(div)
+  if (scroll) scrollBottom()
+}
+
+function scrollBottom() {
+  requestAnimationFrame(() => { $messages.scrollTop = $messages.scrollHeight })
+}
+
+async function send() {
+  trySubscribePush()
+  const text = $input.value.trim()
+  if (!text || !ws || ws.readyState !== 1) return
+  ws.send(JSON.stringify({ type: 'message', content: text }))
+  addMessage('user', text, null, new Date().toISOString(), true)
+  $input.value = ''; $input.style.height = 'auto'; $sendBtn.disabled = true
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto'
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+}
+
+// Auth
+$pin.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    $authErr.textContent = ''
+    ws.send(JSON.stringify({ type: 'auth', pin: $pin.value }))
+  }
+})
+
+// Terminal
+let termOpen = false
+function toggleTerminal() {
+  termOpen = !termOpen
+  document.getElementById('termOverlay').classList.toggle('visible', termOpen)
+  if (termOpen) ws?.send(JSON.stringify({ type: 'terminal_subscribe' }))
+  else ws?.send(JSON.stringify({ type: 'terminal_unsubscribe' }))
+}
+function sendTermCmd() {
+  const el = document.getElementById('termInput')
+  const text = el.value.trim()
+  if (!text) return
+  ws?.send(JSON.stringify({ type: 'terminal_input', text }))
+  el.value = ''
+}
+function sendCtrlC() {
+  ws?.send(JSON.stringify({ type: 'terminal_signal', signal: 'C-c' }))
+}
+
+// Visibility tracking
+document.addEventListener('visibilitychange', () => {
+  ws?.send(JSON.stringify({ type: 'visibility', visible: !document.hidden }))
+})
+
+connect()
+</script>
+</body>
+</html>

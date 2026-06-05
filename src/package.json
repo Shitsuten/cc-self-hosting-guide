@@ -1,0 +1,14 @@
+{
+  "name": "cc-web-channel",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "hub": "bun run hub.ts",
+    "setup-vapid": "npx web-push generate-vapid-keys --json > vapid-keys.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "web-push": "^3.6.0",
+    "ws": "^8.18.0"
+  }
+}
