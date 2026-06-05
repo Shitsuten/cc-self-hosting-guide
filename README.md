@@ -44,6 +44,7 @@ Hub（常驻进程，负责转发 + nudge + 终端视图）
 | [`src/sw.js`](src/sw.js) | Service worker：接收 push 弹系统通知 |
 | [`src/manifest.json`](src/manifest.json) | PWA manifest |
 | [`src/package.json`](src/package.json) | 依赖声明 |
+| [`src/chrome-extension/`](src/chrome-extension/) | Chrome 侧边栏插件：提取网页内容发送给 CC |
 
 ```bash
 # 跑起来

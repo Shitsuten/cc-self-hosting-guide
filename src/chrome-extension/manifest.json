@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "CC Channel",
+  "version": "0.1.0",
+  "description": "Chrome sidebar for Claude Code — extract page content and send to CC",
+  "permissions": [
+    "sidePanel",
+    "activeTab",
+    "storage"
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "CC Channel"
+  }
+}
