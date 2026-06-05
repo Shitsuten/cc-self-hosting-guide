@@ -139,6 +139,7 @@ certbot --nginx -d your-domain.com
 - **Session 文件保留 30 天**：默认只保留 30 天，可以在设置里改 `~/.claude/settings.json` → `"sessionTTLDays"`
 - **`/resume`**：回到任意历史 session 继续对话，会列出最近的 session 让你选
 - **`/continue`**：直接接上最后一个 session，不用选
+- **不要用 root 跑 CC**：`--dangerously-skip-permissions` 在 root 下会拒绝执行。建议新建一个普通用户跑 CC
 
 ## 可选升级
 
