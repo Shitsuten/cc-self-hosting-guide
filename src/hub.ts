@@ -9,7 +9,7 @@
  * Env:
  *   CHANNEL_PORT         — client-facing port (default 3456)
  *   CHANNEL_BRIDGE_PORT  — internal bridge port (default 3457)
- *   CHANNEL_PIN          — PIN for client auth (default: none)
+ *   CHANNEL_PIN          — optional PIN for client auth. If not set, no auth required
  *   CHANNEL_TMUX         — tmux session name (default: cc)
  *   CHANNEL_USER         — display name for the user (default: user)
  *   CHANNEL_ASSISTANT    — display name for CC (default: claude)
