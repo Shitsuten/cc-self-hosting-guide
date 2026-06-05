@@ -33,7 +33,7 @@ Hub（常驻进程，负责转发 + nudge + 终端视图）
 - **`/resume`**：回到任意历史 session 继续对话，会列出最近的 session 让你选
 - **`/continue`**：直接接上最后一个 session，不用选
 - **不要用 root 跑 CC**：`--dangerously-skip-permissions` 在 root 下会拒绝执行。建议新建一个普通用户跑 CC
-- **切换模型**：启动时 `claude --model claude-opus-4-6`，或运行中 `/model` 然后手动输入 `claude-opus-4-6`
+- **切换模型**：启动时 `claude --model claude-opus-4-6`，或运行中 `/model` 然后手动输入 `claude-opus-4-6`。输入时加 `1m` 后缀可以启用 1M 上下文窗口
 
 ## 文档
 
