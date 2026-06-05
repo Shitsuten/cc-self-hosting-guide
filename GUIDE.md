@@ -17,6 +17,7 @@
   - [2. Watchdog → 开机自启动](#2-watchdog--开机自启动2026-05-15-移除)
   - [3. Session 轮换](#3-session-轮换)
 - [七、关于维护](#七关于维护)
+- [七点五、PWA + Web Push 推送](#七点五pwa--web-push-推送)
 - [八、关键经验总结](#八关键经验总结踩了才知道的)
 
 ---
@@ -38,8 +39,10 @@
 越走越野，但越走越稳。每次迁移都是被逼的——screen 不行换 tmux，Telegram 不够用换自制前端，channel flag 炸了换 tmux 注入。
 
 **本文亮点：** 如果你已经有了基本的前端 + CC 架构，可以直接跳到感兴趣的部分——
-- **Session 轮换**（第六节）：通过前端远程完成 CC 的停止、重启和上下文衔接，不需要 SSH。这是我们摸索出来的解决 CC 长期运行后 context 膨胀问题的方案。
-- **排障手册的思路**（第七节）：VPS 上的 CC 不应该自己修自己。单独维护一份排障手册，让别的 agent 或者你自己照着修，比让 CC 分心 debug 自己靠谱得多。
+- **PWA + Web Push 离线推送**：hub 检测到没有活跃的 WebSocket 客户端时，自动通过 Web Push 把 CC 的回复推到手机通知栏。不需要 Telegram、不需要第三方推送服务。通知权限的获取挂在发送按钮上——第一次发消息时弹授权，满足浏览器的 user gesture 要求，不需要单独的"允许通知"按钮
+- **Hub / CC 分离架构**：hub 独立于 CC 运行。CC 崩了、重启了、换 session 了，前端不断线，状态灯变灰但消息历史和连接都保留。CC 回来自动重连。这个设计让 CC 可以随时重启而用户无感
+- **Session 轮换**（第六节）：通过前端远程完成 CC 的停止、重启和上下文衔接，不需要 SSH。这是我们摸索出来的解决 CC 长期运行后 context 膨胀问题的方案
+- **排障手册的思路**（第七节）：VPS 上的 CC 不应该自己修自己。单独维护一份排障手册，让别的 agent 或者你自己照着修，比让 CC 分心 debug 自己靠谱得多
 
 ---
 
@@ -369,6 +372,56 @@ VPS 上跑 CC 的本质目的是让 CC 专注在那台 VPS 上运行——陪聊
 建议整理一份详尽的排障手册（handbook），覆盖所有常见故障的症状、排查步骤和修复命令。这样不管是让别的 AI 照着手册修，还是自己半夜被叫起来 SSH 进去，都能快速定位问题，而不是让 VPS 上的 CC 分心去 debug 自己的运行环境。
 
 排障手册见 [HANDBOOK.md](HANDBOOK.md)。
+
+---
+
+## 七点五、PWA + Web Push 推送
+
+前端做成 PWA（Progressive Web App）之后可以装到手机主屏幕，体验接近原生 app。配合 Web Push 可以在用户不在线时推送 CC 的消息到系统通知栏，完全替代 Telegram 等第三方推送。
+
+### 核心组件
+
+1. **manifest.json** — PWA 声明文件。`"display": "standalone"` 让它以全屏 app 形式打开
+2. **sw.js（Service Worker）** — 后台运行，接收 push event，弹系统通知
+3. **VAPID 密钥** — Web Push 的身份认证。用 `npx web-push generate-vapid-keys` 生成一次就行
+4. **Hub 端推送逻辑** — CC 回复消息时，hub 检测有没有活跃的 WebSocket 客户端。有就正常走 WebSocket；没有就调 `web-push` 库推到用户手机
+
+### 通知权限的获取
+
+浏览器要求 `Notification.requestPermission()` 必须在 user gesture（用户主动操作）内调用。常见做法是放一个"开启通知"按钮，但这种一次性按钮放着占位置。
+
+我们的做法：把权限请求挂在**发送按钮**上。用户第一次发消息时触发授权弹窗，之后不再弹。发消息本身就是 user gesture，满足浏览器要求，且不需要额外 UI 元素。
+
+```javascript
+async function send() {
+  trySubscribePush()  // 第一次调用时请求权限，之后跳过
+  // ... 正常发送逻辑
+}
+```
+
+### PWA 缓存注意事项
+
+PWA standalone 模式的缓存比浏览器标签页更激进。如果你更新了前端代码但 PWA 还显示旧版本：
+
+- HTML 和 SW 的响应头加 `Cache-Control: no-cache, no-store, must-revalidate`
+- 图标等静态资源可以用长期缓存 `Cache-Control: public, max-age=31536000`
+- 用户可能需要完全关闭 PWA（从最近任务划掉）再重新打开
+
+### PWA standalone 模式的 CSS
+
+手机状态栏会覆盖 PWA 顶部内容。所有顶部导航栏需要加：
+
+```css
+padding-top: calc(12px + env(safe-area-inset-top, 0px));
+```
+
+底部输入框同理：
+
+```css
+padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+```
+
+移动端视口高度用 `100dvh`（dynamic viewport height）比 `100vh` 更准确。
 
 ---
 
