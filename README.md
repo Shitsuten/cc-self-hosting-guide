@@ -42,8 +42,8 @@ Hub（常驻进程，负责转发 + nudge + 终端视图）
 ```bash
 # 跑起来
 cd src && bun install
-npm run setup-vapid          # 生成 VAPID 密钥（push 用）
-bun run hub.ts               # 启动 hub
+npm run setup-vapid          # 生成 VAPID 密钥（push 用，可选）
+CHANNEL_PIN=1234 bun run hub.ts  # 启动 hub（PIN 可选，不设就无认证）
 # 然后配 CC 的 .mcp.json 指向 server.ts
 ```
 
