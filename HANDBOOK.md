@@ -2,6 +2,41 @@
 
 > 我们自用的排障手册，脱敏后的版本。建议根据自己的部署情况整理一份类似的。给 AI agent 和自己看的，修之前先读完相关 section。
 
+## 最常用：CC 跑在非 root 用户下时怎么操作
+
+CC 通常跑在普通用户（如 `petronius`）的 tmux 里，而你 SSH 进来默认是 root。以下是从 root 操作 CC 的方法：
+
+**查看 CC 状态：**
+```bash
+sudo -u petronius tmux ls                    # 看 tmux session 列表
+sudo -u petronius pgrep -af claude           # 看 CC 进程
+```
+
+**进去看 CC 终端（观察模式）：**
+```bash
+su - petronius          # 先切用户
+tmux attach -t cc       # 进去看
+# ⚠️ 看完按 Ctrl+B D 退出！！千万别按 Ctrl+C 那会杀掉 CC
+```
+
+**CC 挂了，一行拉起：**
+```bash
+sudo -u petronius bash -c 'cd /opt/petronius-bot && tmux new-session -d -s cc "bash start_cc.sh"'
+```
+
+**hub 挂了，一行拉起：**
+```bash
+sudo -u petronius bash -c 'cd /opt/petronius-bot/channel-satyricon && tmux new-session -d -s satyricon-hub "exec bun run hub.ts 2>&1"'
+```
+
+**判断活没活：**
+```bash
+sudo -u petronius tmux ls              # 应该有 cc 和 satyricon-hub
+sudo -u petronius pgrep -af claude     # CC 进程
+sudo -u petronius pgrep -af "bun.*hub" # hub 进程
+# 两个都有输出就是在的
+```
+
 ## 排障原则
 
 1. **先看再动**。`tmux ls` 看 session 在不在，`pgrep -af claude` 看进程在不在，`dmesg | tail -30` 看有没有 OOM。
